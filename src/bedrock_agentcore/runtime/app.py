@@ -314,12 +314,16 @@ class BedrockAgentCoreApp(Starlette):
             # Get the headers from context to pass to RequestContext
             req_headers = BedrockAgentCoreContext.get_request_headers()
 
-            return RequestContext(session_id=session_id, request_headers=req_headers)
+            return RequestContext(
+                session_id=session_id,
+                request_headers=req_headers,
+                request=request,  # Pass through the Starlette request object
+            )
         except Exception as e:
             self.logger.warning("Failed to build request context: %s: %s", type(e).__name__, e)
             request_id = str(uuid.uuid4())
             BedrockAgentCoreContext.set_request_context(request_id, None)
-            return RequestContext(session_id=None)
+            return RequestContext(session_id=None, request=None)
 
     def _takes_context(self, handler: Callable) -> bool:
         try:
