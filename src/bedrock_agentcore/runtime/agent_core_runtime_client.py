@@ -159,7 +159,7 @@ class AgentCoreRuntimeClient:
             ValueError: If runtime_arn format is invalid.
 
         Example:
-            >>> client = AgentRuntimeClient('us-west-2')
+            >>> client = AgentCoreRuntimeClient('us-west-2')
             >>> ws_url, headers = client.generate_ws_connection(
             ...     runtime_arn='arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime',
             ...     endpoint_name='DEFAULT'
@@ -209,11 +209,12 @@ class AgentCoreRuntimeClient:
             "Host": host,
             "X-Amz-Date": request.headers["x-amz-date"],
             "Authorization": request.headers["Authorization"],
+            "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id,
             "Upgrade": "websocket",
             "Connection": "Upgrade",
             "Sec-WebSocket-Version": "13",
             "Sec-WebSocket-Key": base64.b64encode(secrets.token_bytes(16)).decode(),
-            "User-Agent": f"AgentRuntime-Client/1.0 (Session: {session_id})",
+            "User-Agent": "AgentCoreRuntimeClient/1.0",
         }
 
         # Add session token if present
@@ -256,7 +257,7 @@ class AgentCoreRuntimeClient:
             RuntimeError: If URL generation fails or no credentials found.
 
         Example:
-            >>> client = AgentRuntimeClient('us-west-2')
+            >>> client = AgentCoreRuntimeClient('us-west-2')
             >>> presigned_url = client.generate_presigned_url(
             ...     runtime_arn='arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime',
             ...     endpoint_name='DEFAULT',
@@ -277,6 +278,11 @@ class AgentCoreRuntimeClient:
         if not session_id:
             session_id = str(uuid.uuid4())
             self.logger.debug("Auto-generated session ID: %s", session_id)
+
+        # Add session_id to custom_headers (which become query params)
+        if custom_headers is None:
+            custom_headers = {}
+        custom_headers["X-Amzn-Bedrock-AgentCore-Runtime-Session-Id"] = session_id
 
         # Build WebSocket URL with query parameters
         ws_url = self._build_websocket_url(runtime_arn, endpoint_name, custom_headers)
@@ -344,7 +350,7 @@ class AgentCoreRuntimeClient:
             ValueError: If runtime_arn format is invalid or bearer_token is empty.
 
         Example:
-            >>> client = AgentRuntimeClient('us-west-2')
+            >>> client = AgentCoreRuntimeClient('us-west-2')
             >>> ws_url, headers = client.generate_ws_connection_oauth(
             ...     runtime_arn='arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime',
             ...     bearer_token='eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
